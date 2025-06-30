@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
-# Install real headless Chrome (not chromium)
-echo "Installing Chrome for headless mode..."
-apt-get update
-apt-get install -y wget unzip
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-apt-get install -y ./google-chrome-stable_current_amd64.deb
-
-echo "✅ Chrome installed successfully"
+echo "📦 Downloading headless Chrome..."
+mkdir -p chrome
+curl -sSL https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.105/linux64/chrome-linux64.zip -o chrome.zip
+unzip chrome.zip -d chrome
+echo "✅ Chrome downloaded and extracted"
