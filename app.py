@@ -29,6 +29,7 @@ def download_pdf_for_sic(sic_number):
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument("--user-agent=Mozilla/5.0")
     prefs = {
         "download.default_directory": DOWNLOAD_DIR,
         "download.prompt_for_download": False,
@@ -37,7 +38,9 @@ def download_pdf_for_sic(sic_number):
     options.add_experimental_option("prefs", prefs)
 
     try:
-        driver = uc.Chrome(options=options)
+        # ✅ Key fix: avoid binary_location bug on Render
+        driver = uc.Chrome(options=options, use_subprocess=True)
+
         print("[INFO] Chrome session started")
 
         # Step 1: Login
@@ -63,7 +66,7 @@ def download_pdf_for_sic(sic_number):
 
         # Step 4: Wait for download
         print("[INFO] Waiting for download...")
-        timeout = 30
+        timeout = 45
         start_time = time.time()
         downloaded_file = None
 
@@ -125,6 +128,7 @@ def handle_download():
 
     except Exception as e:
         print(f"[EXCEPTION] /download: {e}")
+        print(traceback.format_exc())
         return jsonify({"error": "Server error"}), 500
 
 @app.route('/downloads/<filename>')
