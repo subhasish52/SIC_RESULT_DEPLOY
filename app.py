@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template
-from selenium import webdriver
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import os
@@ -11,67 +10,59 @@ import traceback
 
 app = Flask(__name__)
 
-# ====== ERP Login Credentials ======
+# ERP Credentials
 USERNAME = "23bcsb02"
 PASSWORD = "Subhasish@2006"
 
-# ====== Chromium & Driver Paths for Render ======
-CHROME_BINARY = os.path.join(os.getcwd(), "bin", "chrome-linux", "chrome")
-CHROMEDRIVER_PATH = os.path.join(os.getcwd(), "bin", "chromedriver")
-
-# ====== PDF Output Directory ======
+# Directory to save downloaded PDFs
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+# === Function to download PDF using undetected-chromedriver ===
 def download_pdf_for_sic(sic_number):
-    print(f"[INFO] Processing SIC: {sic_number}...")
-
-    # Clear previous downloads
+    print(f"[INFO] Starting download for: {sic_number}")
     shutil.rmtree(DOWNLOAD_DIR, ignore_errors=True)
     os.makedirs(DOWNLOAD_DIR)
 
-    # Set up Chrome options
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.binary_location = CHROME_BINARY
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_experimental_option("prefs", {
+    options = uc.ChromeOptions()
+    options.headless = True
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1920,1080")
+    prefs = {
         "download.default_directory": DOWNLOAD_DIR,
         "download.prompt_for_download": False,
         "plugins.always_open_pdf_externally": True
-    })
+    }
+    options.add_experimental_option("prefs", prefs)
 
     try:
-        service = Service(CHROMEDRIVER_PATH)
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        print("[INFO] Selenium started.")
-    except Exception as e:
-        print(f"[ERROR] Failed to launch Chrome: {e}")
-        print(traceback.format_exc())
-        return None
+        driver = uc.Chrome(options=options)
+        print("[INFO] Chrome session started")
 
-    try:
-        # Login flow
+        # Step 1: Login
         driver.get("https://erp.silicon.ac.in/estcampus/index.php")
-
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "username"))).send_keys(USERNAME)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.NAME, "username"))
+        ).send_keys(USERNAME)
         driver.find_element(By.NAME, "password").send_keys(PASSWORD)
         driver.find_element(By.XPATH, "//button[text()='Sign in']").click()
 
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
 
-        # Go to result page
+        # Step 2: Navigate to result page
         driver.get("https://erp.silicon.ac.in/estcampus/autonomous_exam/exam_result.php?role_code=M1Z5SEVJM2dub0NWWE5GZy82dHh2QT09")
 
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-        # Execute download script
+        # Step 3: Trigger PDF download
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
         driver.execute_script(f"Final_Semester_Result_pdf_Download('{sic_number}')")
 
-        # Wait for PDF
+        # Step 4: Wait for download
+        print("[INFO] Waiting for download...")
         timeout = 30
         start_time = time.time()
         downloaded_file = None
@@ -89,20 +80,25 @@ def download_pdf_for_sic(sic_number):
             new_filename = f"{sic_number}.pdf"
             new_path = os.path.join(DOWNLOAD_DIR, new_filename)
             os.rename(downloaded_file, new_path)
+            print(f"[SUCCESS] PDF saved as {new_filename}")
             return new_path
         else:
-            print("[ERROR] PDF not found after timeout.")
+            print("[ERROR] PDF not downloaded in time.")
             return None
 
     except Exception as e:
-        print(f"[EXCEPTION] Error during download: {e}")
+        print(f"[ERROR] Download failed: {e}")
         print(traceback.format_exc())
         return None
 
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except:
+            pass
+        print("[INFO] Chrome session closed")
 
-# ====== Flask Routes ======
+# === Flask Routes ===
 
 @app.route('/')
 def index():
@@ -123,9 +119,9 @@ def handle_download():
         pdf_path = download_pdf_for_sic(full_sic)
 
         if pdf_path and os.path.exists(pdf_path):
-            return jsonify({"message": "PDF downloaded successfully", "pdf": os.path.basename(pdf_path)}), 200
+            return jsonify({"message": "PDF downloaded successfully", "pdf": os.path.basename(pdf_path)})
         else:
-            return jsonify({"error": "PDF generation failed"}), 500
+            return jsonify({"error": "Failed to download PDF"}), 500
 
     except Exception as e:
         print(f"[EXCEPTION] /download: {e}")
@@ -138,5 +134,6 @@ def serve_pdf(filename):
     except:
         return jsonify({"error": "PDF not found"}), 404
 
+# Run locally
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000)
