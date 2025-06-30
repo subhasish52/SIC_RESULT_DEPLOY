@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SIC Result Viewer</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- 🔄 New 3D Circle Loader -->
+  <div id="inline-loader" class="hidden">
+    <div class="circle-loader">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <p>Loading PDF...</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container">
+    <header>
+      <h1>SIC Result Viewer</h1>
+    </header>
+
+    <div class="main-content">
+      <!-- Input Section -->
+      <div class="sidebar">
+        <div class="input-section">
+          <label for="sicInput">Enter SIC Number</label>
+          <input type="text" id="sicInput" placeholder="e.g., 23BCSB02" maxlength="8" />
+          <button onclick="submitSic()">Get Result</button>
+          <div class="messages" id="messages"></div>
+        </div>
+      </div>
+
+      <!-- PDF Section -->
+      <div class="pdf-section">
+        <div class="pdf-viewer" id="pdfViewer">
+          <p>No result loaded yet. Enter a SIC number to view the PDF.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

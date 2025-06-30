@@ -1,0 +1,296 @@
+/* === Global Reset === */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: #0e1016;
+    margin: 0;
+    padding: 0;
+    color: #e0e0e0;
+    overflow-x: hidden;
+}
+
+/* === Container === */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* === Header === */
+header {
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #222;
+    animation: fadeInUp 1s ease-out forwards;
+    opacity: 0;
+}
+
+h1 {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+/* === Main Layout === */
+.main-content {
+    display: flex;
+    gap: 30px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+    animation: fadeInUp 1.5s ease-out forwards;
+    opacity: 0;
+}
+
+/* === Sidebar (SIC Entry Box) === */
+.sidebar {
+    flex: 1;
+    max-width: 300px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 20px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    animation: neon-pulse-soft 4s infinite, fadeInLeft 2s ease-out forwards;
+    opacity: 0;
+}
+
+/* === Input Section === */
+.input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+label {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+input {
+    padding: 12px;
+    font-size: 1em;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background: #11131a;
+    color: #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: #00fff7;
+    box-shadow: 0 0 10px #00fff799;
+    outline: none;
+}
+
+/* === Button === */
+button {
+    padding: 12px;
+    background: linear-gradient(to right, #00fff7, #0066ff);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: linear-gradient(to right, #00d0ff, #0044ff);
+    box-shadow: 0 0 8px #00fff7, 0 0 15px #00fff7aa;
+    border: 1px solid #00fff7;
+    animation: neon-pulse-soft 3s infinite;
+    transform: scale(1.03);
+}
+
+/* === Messages === */
+.messages {
+    margin-top: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.messages p {
+    margin: 5px 0;
+    padding: 10px;
+    background: #1b1e26;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: #d4d4d4;
+    border-left: 4px solid #00fff7;
+}
+
+.messages p.error {
+    background: #2e1b1c;
+    color: #ff5b5b;
+    border-left-color: #ff1b1b;
+}
+
+/* === PDF Section === */
+.pdf-section {
+    flex: 3;
+    background: #15171d;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.05);
+    min-width: 600px;
+    animation: fadeInRight 2s ease-out forwards;
+    opacity: 0;
+}
+
+.pdf-viewer {
+    width: 100%;
+    height: 600px;
+    transition: height 0.3s ease;
+    overflow: hidden;
+    border: 1px solid #2a2d37;
+    border-radius: 8px;
+    background: #0f1014;
+}
+
+.pdf-viewer.active {
+    height: 800px;
+}
+
+.pdf-viewer embed {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.pdf-viewer p {
+    text-align: center;
+    color: #757575;
+    font-size: 1.1em;
+    margin-top: 50px;
+}
+
+/* === Inline Loader (3D Circle Loader) === */
+#inline-loader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    text-align: center;
+}
+
+.circle-loader {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.circle-loader .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 8px solid transparent;
+    border-top: 8px solid #00fff7;
+    animation: spin 1.2s linear infinite;
+    box-shadow: 0 0 30px #00fff7cc;
+}
+
+.circle-loader .ring:nth-child(2) {
+    width: 120px;
+    height: 120px;
+    top: 15px;
+    left: 15px;
+    border-top-color: #ff00f7;
+    animation-delay: 0.3s;
+    box-shadow: 0 0 30px #ff00f7cc;
+}
+
+.circle-loader .ring:nth-child(3) {
+    width: 90px;
+    height: 90px;
+    top: 30px;
+    left: 30px;
+    border-top-color: #00f7ff;
+    animation-delay: 0.6s;
+    box-shadow: 0 0 30px #00f7ffcc;
+}
+
+.circle-loader .ring:first-child {
+    width: 150px;
+    height: 150px;
+    top: 0;
+    left: 0;
+}
+
+.circle-loader p {
+    margin-top: 170px;
+    font-size: 1.1rem;
+    color: #00fff7;
+    font-weight: bold;
+    font-family: 'Outfit', sans-serif;
+    text-shadow: 0 0 5px #00fff7;
+}
+
+/* === Animations === */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes neon-pulse-soft {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(0, 255, 255, 0.15),
+                    0 0 8px rgba(0, 255, 255, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.2),
+                    0 0 15px rgba(0, 255, 255, 0.15);
+    }
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInLeft {
+    0% {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInRight {
+    0% {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* === Utility === */
+.hidden {
+    display: none;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .pdf-section {
+        min-width: unset;
+    }
+}

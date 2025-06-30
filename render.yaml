@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: sic-result-viewer
+    env: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn app:app
+    plan: free
