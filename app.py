@@ -10,26 +10,29 @@ import traceback
 
 app = Flask(__name__)
 
-# ERP Credentials
+# === ERP Credentials ===
 USERNAME = "23bcsb02"
 PASSWORD = "Subhasish@2006"
 
-# Directory to save downloaded PDFs
+# === Downloads Folder ===
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# === Function to download PDF using undetected-chromedriver ===
+
 def download_pdf_for_sic(sic_number):
     print(f"[INFO] Starting download for: {sic_number}")
     shutil.rmtree(DOWNLOAD_DIR, ignore_errors=True)
     os.makedirs(DOWNLOAD_DIR)
 
+    # === Chrome options ===
     options = uc.ChromeOptions()
+    options.binary_location = "/usr/bin/google-chrome"  # 🔥 Critical for Render
     options.headless = True
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--user-agent=Mozilla/5.0")
+
     prefs = {
         "download.default_directory": DOWNLOAD_DIR,
         "download.prompt_for_download": False,
@@ -38,38 +41,29 @@ def download_pdf_for_sic(sic_number):
     options.add_experimental_option("prefs", prefs)
 
     try:
-        # ✅ Key fix: avoid binary_location bug on Render
         driver = uc.Chrome(options=options, use_subprocess=True)
-
         print("[INFO] Chrome session started")
 
-        # Step 1: Login
+        # Login Page
         driver.get("https://erp.silicon.ac.in/estcampus/index.php")
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.NAME, "username"))
-        ).send_keys(USERNAME)
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "username"))).send_keys(USERNAME)
         driver.find_element(By.NAME, "password").send_keys(PASSWORD)
         driver.find_element(By.XPATH, "//button[text()='Sign in']").click()
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-
-        # Step 2: Navigate to result page
+        # Navigate to result page
         driver.get("https://erp.silicon.ac.in/estcampus/autonomous_exam/exam_result.php?role_code=M1Z5SEVJM2dub0NWWE5GZy82dHh2QT09")
 
-        # Step 3: Trigger PDF download
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+        # Trigger PDF download
+        print(f"[INFO] Triggering PDF download for SIC: {sic_number}")
         driver.execute_script(f"Final_Semester_Result_pdf_Download('{sic_number}')")
 
-        # Step 4: Wait for download
-        print("[INFO] Waiting for download...")
+        # Wait for download
         timeout = 45
         start_time = time.time()
         downloaded_file = None
-
         while time.time() - start_time < timeout:
             for file in os.listdir(DOWNLOAD_DIR):
                 if file.endswith(".pdf"):
@@ -101,11 +95,13 @@ def download_pdf_for_sic(sic_number):
             pass
         print("[INFO] Chrome session closed")
 
-# === Flask Routes ===
+
+# === ROUTES ===
 
 @app.route('/')
 def index():
     return render_template("index.html")
+
 
 @app.route('/download', methods=['POST'])
 def handle_download():
@@ -131,6 +127,7 @@ def handle_download():
         print(traceback.format_exc())
         return jsonify({"error": "Server error"}), 500
 
+
 @app.route('/downloads/<filename>')
 def serve_pdf(filename):
     try:
@@ -138,6 +135,7 @@ def serve_pdf(filename):
     except:
         return jsonify({"error": "PDF not found"}), 404
 
-# Run locally
+
+# === Run Local Dev Server ===
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000)
