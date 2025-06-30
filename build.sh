@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
-
-# Exit immediately on error
 set -e
 
-# Create directory for binaries
+# Create bin directory
 mkdir -p bin
 cd bin
 
-# Download headless Chromium (Render compatible)
-curl -O https://storage.googleapis.com/chromium-browser-snapshots/Linux_x64/1158166/chrome-linux.zip
-unzip chrome-linux.zip
+# ✅ Download Chromium (stable from Playwright)
+curl -Lo chrome-linux.zip https://github.com/macchrome/winchrome/releases/download/v114.0.5735.91-r1103743-Win64/chrome-win.zip
 
-# Download matching ChromeDriver
-curl -O https://storage.googleapis.com/chromium-browser-snapshots/Linux_x64/1158166/chromedriver_linux64.zip
+# This is a Windows zip, use this instead:
+curl -LO https://storage.googleapis.com/chromium-browser-snapshots/Linux_x64/1174245/chrome-linux.zip
+curl -LO https://storage.googleapis.com/chromium-browser-snapshots/Linux_x64/1174245/chromedriver_linux64.zip
+
+# Unzip both archives
+unzip chrome-linux.zip
 unzip chromedriver_linux64.zip
 
 cd ..
-
-# Export paths for reference
-echo "Chromium and Chromedriver downloaded and unzipped in /bin"

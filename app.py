@@ -11,48 +11,50 @@ import traceback
 
 app = Flask(__name__)
 
-# ====== Configuration ======
+# ====== ERP Login Credentials ======
 USERNAME = "23bcsb02"
 PASSWORD = "Subhasish@2006"
 
-# ====== Paths for Render-compatible binaries ======
+# ====== Chromium & Driver Paths for Render ======
 CHROME_BINARY = os.path.join(os.getcwd(), "bin", "chrome-linux", "chrome")
 CHROMEDRIVER_PATH = os.path.join(os.getcwd(), "bin", "chromedriver")
 
-# ====== Downloads directory ======
+# ====== PDF Output Directory ======
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# ====== Selenium Automation Logic ======
 def download_pdf_for_sic(sic_number):
     print(f"[INFO] Processing SIC: {sic_number}...")
 
+    # Clear previous downloads
     shutil.rmtree(DOWNLOAD_DIR, ignore_errors=True)
     os.makedirs(DOWNLOAD_DIR)
 
-    options = webdriver.ChromeOptions()
-    options.binary_location = CHROME_BINARY
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920,1080")
-    options.add_experimental_option("prefs", {
+    # Set up Chrome options
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.binary_location = CHROME_BINARY
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_experimental_option("prefs", {
         "download.default_directory": DOWNLOAD_DIR,
         "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
         "plugins.always_open_pdf_externally": True
     })
 
     try:
         service = Service(CHROMEDRIVER_PATH)
-        driver = webdriver.Chrome(service=service, options=options)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        print("[INFO] Selenium started.")
     except Exception as e:
-        print(f"[ERROR] ChromeDriver start failed: {e}")
+        print(f"[ERROR] Failed to launch Chrome: {e}")
         print(traceback.format_exc())
         return None
 
     try:
+        # Login flow
         driver.get("https://erp.silicon.ac.in/estcampus/index.php")
 
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "username"))).send_keys(USERNAME)
@@ -61,19 +63,23 @@ def download_pdf_for_sic(sic_number):
 
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
+        # Go to result page
         driver.get("https://erp.silicon.ac.in/estcampus/autonomous_exam/exam_result.php?role_code=M1Z5SEVJM2dub0NWWE5GZy82dHh2QT09")
+
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
+        # Execute download script
         driver.execute_script(f"Final_Semester_Result_pdf_Download('{sic_number}')")
 
+        # Wait for PDF
         timeout = 30
         start_time = time.time()
         downloaded_file = None
 
         while time.time() - start_time < timeout:
-            for f in os.listdir(DOWNLOAD_DIR):
-                if f.endswith(".pdf"):
-                    downloaded_file = os.path.join(DOWNLOAD_DIR, f)
+            for file in os.listdir(DOWNLOAD_DIR):
+                if file.endswith(".pdf"):
+                    downloaded_file = os.path.join(DOWNLOAD_DIR, file)
                     break
             if downloaded_file:
                 break
@@ -83,20 +89,18 @@ def download_pdf_for_sic(sic_number):
             new_filename = f"{sic_number}.pdf"
             new_path = os.path.join(DOWNLOAD_DIR, new_filename)
             os.rename(downloaded_file, new_path)
-            print(f"[SUCCESS] PDF downloaded: {new_filename}")
             return new_path
         else:
-            print("[ERROR] PDF not downloaded in time.")
+            print("[ERROR] PDF not found after timeout.")
             return None
 
     except Exception as e:
-        print(f"[ERROR] Failed during browser automation: {e}")
+        print(f"[EXCEPTION] Error during download: {e}")
         print(traceback.format_exc())
         return None
 
     finally:
         driver.quit()
-        print("[INFO] Selenium session ended.")
 
 # ====== Flask Routes ======
 
@@ -105,37 +109,34 @@ def index():
     return render_template("index.html")
 
 @app.route('/download', methods=['POST'])
-def download_route():
+def handle_download():
     try:
         data = request.json
-        if not data or 'sic' not in data:
+        if not data or "sic" not in data:
             return jsonify({"error": "Missing SIC number"}), 400
 
-        raw_sic = data['sic'].strip().upper()
-        if len(raw_sic) != 8:
-            return jsonify({"error": "SIC must be exactly 8 characters"}), 400
+        user_input = data["sic"].strip().upper()
+        if len(user_input) != 8:
+            return jsonify({"error": "SIC must be 8 characters"}), 400
 
-        full_sic = f"SITBBS{raw_sic}"
-        result_path = download_pdf_for_sic(full_sic)
+        full_sic = f"SITBBS{user_input}"
+        pdf_path = download_pdf_for_sic(full_sic)
 
-        if result_path and os.path.exists(result_path):
-            return jsonify({"message": "PDF downloaded successfully", "pdf": os.path.basename(result_path)})
+        if pdf_path and os.path.exists(pdf_path):
+            return jsonify({"message": "PDF downloaded successfully", "pdf": os.path.basename(pdf_path)}), 200
         else:
-            return jsonify({"error": "Failed to download PDF"}), 500
+            return jsonify({"error": "PDF generation failed"}), 500
 
     except Exception as e:
         print(f"[EXCEPTION] /download: {e}")
-        print(traceback.format_exc())
-        return jsonify({"error": "Internal Server Error"}), 500
+        return jsonify({"error": "Server error"}), 500
 
 @app.route('/downloads/<filename>')
 def serve_pdf(filename):
     try:
         return send_from_directory(DOWNLOAD_DIR, filename)
-    except Exception as e:
-        print(f"[ERROR] Serving PDF failed: {e}")
+    except:
         return jsonify({"error": "PDF not found"}), 404
 
-# ====== Start App ======
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000)
