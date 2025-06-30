@@ -39,10 +39,12 @@ def download_pdf_for_sic(sic_number):
     try:
         # ✅ Pass explicit Chrome binary path
         driver = uc.Chrome(
-            options=options,
-            use_subprocess=True,
-            browser_executable_path="/opt/render/project/src/chrome/chrome-linux64/chrome"
+        options=options,
+        use_subprocess=True,
+        browser_executable_path="/opt/render/project/src/chrome/chrome-linux64/chrome",
+        driver_executable_path="/opt/render/project/src/chromedriver/chromedriver-linux64/chromedriver"
         )
+
 
         print("[INFO] Chrome session started")
 
