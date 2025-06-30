@@ -1,7 +1,10 @@
 services:
   - type: web
     name: sic-result-viewer
-    env: python
-    buildCommand: ./build.sh
-    startCommand: gunicorn app:app
-    plan: free
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10
+    autoDeploy: true
